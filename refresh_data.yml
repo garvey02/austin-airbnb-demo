@@ -1,0 +1,31 @@
+# Auto-refresh Inside Airbnb Austin data monthly
+# This downloads the latest listings CSV and commits it to the repo.
+# Streamlit Cloud auto-redeploys when the repo is updated.
+
+name: Refresh Airbnb Data
+
+on:
+  schedule:
+    - cron: '0 6 1 * *'  # 6am UTC on the 1st of every month
+  workflow_dispatch:       # Manual trigger button in GitHub Actions
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run data refresh
+        run: python refresh_data.py
+
+      - name: Commit updated data
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add data/ listings*.csv || true
+          git diff --cached --quiet || git commit -m "Auto-refresh: Inside Airbnb data $(date +%Y-%m-%d)"
+          git push
